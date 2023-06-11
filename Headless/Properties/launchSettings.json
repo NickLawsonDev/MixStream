@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Headless": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "MixStreamSpotifyClientId": "46a82cddc34346f3870e86d8480d4bc3",
+        "MixStreamSpotifyClientSecret": "6438d67de983405798cbdf2c3a8210ec"
+      }
+    }
+  }
+}
