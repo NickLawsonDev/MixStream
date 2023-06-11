@@ -106,19 +106,6 @@ public class SpotifyProvider : MusicProvider
         return new(album.Id, album.Name, album.TotalTracks, album.ReleaseDate);
     }
 
-    private async Task<IEnumerable<Song>> GetSongsWithPagination(Paging<SimpleTrack> tracks, string albumId = "")
-    {
-        Guards.IsNotNull(tracks.Items!);
-        Guards.IsNotEmpty<List<SimpleTrack>>(tracks.Items!);
-
-        var a = await _spotify.PaginateAll(tracks);
-        return a.ToList().Select(x => new Song(x.Id, x.Name, x.TrackNumber)
-        {
-            Artists = x.Artists.Select(x => new Artist(x.Id, x.Name)),
-            Album = albumId.IsNullOrEmpty() ? null : Task.Run(() => GetAlbumById(albumId)).Result
-        });
-    }
-
     public override async Task<Artist> GetArtistById(string id)
     {
         Guards.IsNotNullOrEmpty(id);
@@ -133,7 +120,6 @@ public class SpotifyProvider : MusicProvider
         Guards.IsNotNullOrEmpty(id);
         var playlist = await _spotify.Playlists.Get(id);
         Guards.IsNotNull(playlist);
-
         return new(playlist.Id ?? Guid.NewGuid().ToString(), playlist.Name ?? "");
     }
 
@@ -153,8 +139,11 @@ public class SpotifyProvider : MusicProvider
     public override async Task<IEnumerable<Playlist>> GetUserPlaylists()
     {
         var page = await _spotify.Playlists.CurrentUsers();
-        return ((await _spotify.PaginateAll(page)).ToList())
+        var playlists = ((await _spotify.PaginateAll(page)).ToList())
                     .Select(x => new Playlist(x.Id ?? Guid.NewGuid().ToString(), x.Name ?? ""));
+
+        Cache.UpdatePlaylists(playlists.ToList());
+        return playlists;
     }
 
     public async Task<IEnumerable<Song>> GetSongsFromPlaylistId(string id)
@@ -163,7 +152,7 @@ public class SpotifyProvider : MusicProvider
         var playlist = await _spotify.Playlists.Get(id);
         Guards.IsNotNull(playlist);
 
-        return (await _spotify.PaginateAll
+        var songs = (await _spotify.PaginateAll
                         (await _spotify.Playlists.GetItems(playlist.Id!)))
                         .Where(x => x.Track.Type == ItemType.Track)
                         .ToList()
@@ -180,6 +169,12 @@ public class SpotifyProvider : MusicProvider
                                 ((FullTrack)x.Track).Album.ReleaseDate),
                         })
                         .ToList();
+
+        var p = Cache.GetPlaylist(playlist.Name!);
+        Guards.IsNotNull(p!);
+        p.Songs = songs;
+
+        return songs;
     }
 
     public async Task PlaySong(string id)
@@ -192,6 +187,11 @@ public class SpotifyProvider : MusicProvider
         {
             Uris = new List<string>() { track.Uri },
         });
+    }
+
+    public async Task Pause()
+    {
+        await _spotify.Player.PausePlayback();
     }
 
     public async Task<CurrentlyPlayingContext> GetCurrentStatus()

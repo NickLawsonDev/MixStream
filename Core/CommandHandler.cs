@@ -17,7 +17,7 @@ public class CommandHandler
             .Where(p => p.GetInterfaces().Contains(typeof(ICommand)))
             .ToList();
 
-        foreach (var type in types) _commands.Add((ICommand)Activator.CreateInstance(type));
+        foreach (var type in types) _commands.Add((ICommand)Activator.CreateInstance(type)!);
     }
 
     public async Task HandleCommand(string input)
@@ -40,7 +40,6 @@ public class CommandHandler
             return;
         }
 
-        Console.Clear();
         await command.ExecuteCommand(_spotify, parameter);
     }
 }
