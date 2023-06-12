@@ -5,5 +5,5 @@ public interface ICommand
     string CommandName { get; }
     bool RequiresParameter { get; }
 
-    Task ExecuteCommand(SpotifyProvider provider, string args);
+    Task ExecuteCommand(SpotifyProvider provider, Dictionary<string, string> args);
 }

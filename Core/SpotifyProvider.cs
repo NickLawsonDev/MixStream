@@ -11,7 +11,7 @@ public class SpotifyProvider : MusicProvider
     private static string _clientId { get; set; } = "";
     private static string _clientSecret { get; set; } = "";
     private const string _credentialsPath = "credentials.json";
-    private static EmbedIOAuthServer _server = new(new Uri("http://localhost:5543/callback"), 5543);
+    private static MixEmbedIOAuthServer _server = new(new Uri("http://localhost:5543/callback"), 5543);
     private SpotifyClient _spotify = new SpotifyClient("");
 
     public bool IsInitialized = false;

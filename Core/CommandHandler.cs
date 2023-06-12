@@ -23,6 +23,7 @@ public class CommandHandler
     public async Task HandleCommand(string input)
     {
         Guards.IsNotNullOrEmpty(input);
+        Console.Clear();
         var endOfCommand = input.IndexOf(' ');
         var commandName = input.Substring(0, endOfCommand == -1 ? input.Length : endOfCommand);
         var command = _commands.FirstOrDefault(x => x.CommandName.ToLower() == commandName.ToLower());
@@ -33,13 +34,18 @@ public class CommandHandler
             return;
         }
 
-        var parameter = input.Substring(endOfCommand+1);
-        if (command.RequiresParameter && (endOfCommand == -1 || parameter.IsNullOrEmpty()))
+        var parameters = input.Substring(endOfCommand+1).Split('-').ToList();
+        Guards.IsNotNull(parameters);
+        parameters.RemoveAt(0);
+        var args = new Dictionary<string, string>();
+        foreach(var p in parameters) args.Add(p.Substring(0, 1), p.Substring(2).Trim());
+
+        if (command.RequiresParameter && (endOfCommand == -1 || parameters.First().IsNullOrEmpty()))
         {
             ConsoleEx.WriteErrorLine($"Please enter a name of a playlist after the 'playlist' command.");
             return;
         }
 
-        await command.ExecuteCommand(_spotify, parameter);
+        await command.ExecuteCommand(_spotify, args);
     }
 }
